@@ -138,92 +138,6 @@ class MyapiHTTP(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(bytes("Test, OK", "utf-8"))
             errores = 'no'
-        elif url.path.startswith(START_API_SERVER_AT + USERINFO + '/'):
-            url_params = unquote(url.path.replace(START_API_SERVER_AT + USERINFO,'')).split('/')[1:]
-            user_session = url_params[0]
-            try:
-                with DB.connection() as (database, cursor):
-                    cursor.execute("SELECT user_id FROM session_token WHERE token = %s",(user_session[:64],))
-                    user_id = int(cursor.fetchone()[0])
-                    cursor.execute(f"SELECT username,access_lvl FROM user WHERE id = {user_id}")
-                    res = cursor.fetchone()
-                    username = res[0]
-                    access_level = int(res[1])
-                    cursor.execute("SELECT username,access_lvl,id FROM user LIMIT 1000")
-                    res = cursor.fetchall()
-                    all_users = [user[0] for user in res]
-                    all_users_levels_ids={r[0]:{'level':int(r[1]),'id':int(r[2])} for r in res}
-                    all_id_users={all_users_levels_ids[user]['id'] : user for user in all_users}
-                    users = []
-                    users_errs = []
-                    info = []
-                    info_parse = []
-                    parse_errs = []
-                    response = {}
-                    try:
-                        users = uri_params['user'].split(',')
-                        if uri_params['user'].lower()=='all':
-                            users.clear()
-                            users.append(username)
-                            if access_level>0:
-                                for user in all_users:
-                                    # si tu nivel de acceso es mayor a uno o a algun usuario, se añade a tu lista
-                                    if access_level > all_users_levels_ids[user]['level'] and user not in users:
-                                        users.append(user)
-                    except:
-                        #si no incluyes ningun username se añade el username de quien realiza la consulta
-                        users.clear()
-                        users.append(username)
-                    try:
-                        info = uri_params['info'].split(',')
-                    except:
-                        #si no incluyes la info se añade toda la disponible
-                        info = ['id','u','fn','ln','a','ca']
-                    for inf in info:
-                        try:
-                            if REPLACE_API_DB[inf] not in info_parse:
-                                info_parse.append(REPLACE_API_DB[inf])
-                        except Exception as Err:
-                            parse_errs.append(inf)
-                    for user in users:
-                        try:
-                            users[users.index(user)]=all_id_users[int(user)]
-                        except Exception as Err:
-                            user
-                    for user in users:
-                        if user not in all_users:
-                            users_errs.append(user)
-                    users = [user for user in users if user in all_users]
-                    if not bool(users):users.append(username)
-                    print(f"En la solicitud de usuario '{username}' al endpoint '{USERINFO}'\nlos argumentos de info '{parse_errs}' y user '{users_errs}' fueron ignorados\nY los argumentos de info '{info_parse}' y user {users} fueron aceptados")
-                    try:
-                        db_limit = abs(int(uri_params['limit']))
-                    except:
-                        db_limit = 100
-                    try:
-                        db_offset = abs(int(uri_params['offset']))
-                    except:
-                        db_offset = 0
-                    sql_query=(f"SELECT {', '.join([f'{q}' for q in info_parse])} FROM user WHERE " + (' OR '.join([f"username = '{user}'"for user in users]))+f" ORDER BY id LIMIT {db_limit} OFFSET {db_offset}")
-                    cursor.execute(sql_query)
-                    result = cursor.fetchall()
-                    for row_index, row in enumerate(result):
-                        response[row_index + db_offset] = {}
-                        for column_index, value in enumerate(row):
-                            column_name = cursor.column_names[column_index]
-                            if column_name != 'created_at':
-                                response[row_index + db_offset][REPLACE_API_DB_R[column_name]] = value
-                            else:
-                                response[row_index + db_offset][REPLACE_API_DB_R[column_name]] = value.isoformat()
-                    self.send_response(HTTPStatus.OK)
-                    self.send_json(response)
-                    errores = 'no'
-            except Exception as Err:
-                print(Err)
-                self.send_error(HTTPStatus.UNAUTHORIZED)
-                self.end_headers()
-                errores = 'Token de sesion no existe en base de datos'
-
         elif url.path == START_API_SERVER_AT + TEST or url.path.startswith(START_API_SERVER_AT + TEST + '/') or url.path.startswith(START_API_SERVER_AT + TEST + '?'):
             url_params = unquote(url.path.replace(START_API_SERVER_AT + TEST,'')).split('/')[1:]
             self.send_response(HTTPStatus.OK)
@@ -231,6 +145,30 @@ class MyapiHTTP(BaseHTTPRequestHandler):
                 f"parametros de URL (relativos a '{TEST}')":{index: value for index, value in enumerate(url_params)},
                 'parametros de URI o query':uri_params
                 })
+            errores = 'no'
+        elif url.path.startswith(START_API_SERVER_AT + USERINFO + '/'):
+            url_params = unquote(url.path.replace(START_API_SERVER_AT + USERINFO,'')).split('/')[1:]
+            session_token = url_params[0]
+            session_token = validate.session(session_token)
+            userType = validate.userType(uri_params)
+            userL = validate.userList(uri_params,userType)
+            infoL = validate.infoList(uri_params)
+            orderBy = validate.orderBy(uri_params)
+            order = validate.order(uri_params)
+            limit = validate.limit(uri_params)
+            offset = validate.offset(uri_params)
+            self.send_response(HTTPStatus.OK)
+            try:
+                result = userinfo(session_token, userL, infoL, userType, orderBy, order, limit, offset)
+                if result is not None:
+                    self.send_response(HTTPStatus.OK)
+                    self.send_json(result)
+                else:
+                    self.send_response(HTTPStatus.UNAUTHORIZED)
+                    self.end_headers()
+            except:
+                self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR)
+                self.end_headers()
             errores = 'no'
         elif self.path == '/web' or self.path == '/web/' or self.path == '/':
             self.send_response(HTTPStatus.MOVED_PERMANENTLY)
