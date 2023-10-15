@@ -2,7 +2,7 @@ import database_connector as db
 from pyotp import TOTP as totp
 import base64
 import os
-from validation import ACCESS_MIN_VALUE
+import validation
 
 class DBHelp():
     def isDuplicated(cursor,sqlquery,value):
@@ -92,7 +92,7 @@ def register(session, user=None, firstname=None, lastname=None, access=None):
             result = cursor.fetchone()
             if result is not None:
                 access = int(result[0])
-                if newAccess < access and newAccess >= ACCESS_MIN_VALUE:
+                if newAccess < access and newAccess >= validation.ACCESS_MIN_VALUE:
                     while True:
                         otptoken = otp_gen()
                         cursor.execute(REGISTER_TOTP_DUPLICATE_VERIFICATION,(otptoken,))
@@ -116,6 +116,39 @@ def unregister(username,key):
             return True
     return False
 
-def userinfo(session, user = ['all'], info = ['all'], usertype = "id", orderby = 'id', order = "asc", limit = 100, offset = 0):
-    # codigo para recuperar la informacion de usuarios desde una base de datos a partir de un token de sesion administrador
-    return {}
+def userinfo(session, userList, infoList, userType, orderBy, order, limit, offset):
+    if session:
+        userList = userList or ['all']
+        infoList = infoList or ['all']
+        userType = userType or validation.USER_TYPE_DEFAULT
+        orderBy = orderBy or validation.ORDERBY_DEFAULT
+        order = order or validation.ORDER_DEFAULT
+        limit = limit if limit is not None else validation.LIMIT_DEFAULT
+        offset = offset if offset is not None else validation.OFFSET_DEFAULT
+        with db.connection() as (_, cursor):
+            cursor.execute(f"SELECT {validation.USER[0]}, {validation.ACCESS[0]} FROM user JOIN session_token ON user_id = user.id WHERE token = %s",(session,))
+            (userName, access) = cursor.fetchone()
+            if access is not None:
+                access = int(access)
+                cursor.execute(f"SELECT {userType} FROM user WHERE {validation.ACCESS[0]} <= %s",(access,))
+                allowed_users = cursor.fetchall()
+                if allowed_users: allowed_users = [u[0] for u in allowed_users if u is not None]
+                if len(userList) == 1 and userList[0] in validation.ALL: userList = allowed_users.copy()
+                if len(infoList) == 1 and infoList[0] in validation.ALL: infoList = [u for u in validation.INFO_FOR_USER]
+                # esta parte de la consulta sql es muy mejorable, que bien que mariadb permite comparar numeros enteros en forma de 'string'
+                userinfo_sql_query = (
+                    f"SELECT {', '.join([f'{q}' for q in infoList])} FROM user WHERE "
+                    + (' OR '.join([f"{userType} = '{user}'"for user in userList]))
+                    + f" ORDER BY {orderBy} {order} LIMIT {limit} OFFSET {offset}"
+                )
+                cursor.execute(userinfo_sql_query)
+                response = {}
+                result = cursor.fetchall()
+                for row_index, row in enumerate(result):
+                    response[row_index + offset] = {}
+                    for column_index, value in enumerate(row):
+                        column_name = cursor.column_names[column_index]
+                        response[row_index + offset][validation.USERINFO_JSON[column_name]] = value if column_name != validation.CREATED_AT[0] else value.isoformat()
+                print(f"usuario '{userName}' ha solicitado informacion en userinfo")
+                return response
+    return None
