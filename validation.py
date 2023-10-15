@@ -17,6 +17,10 @@ NAMES_MAX_LENGTH = 64
 SESSION_LENGTH = 64
 PRIVATE_LENGTH = 16
 KEY_LENGTH = 6
+LIMIT_MIN = 0
+LIMIT_MAX = 1000
+OFFSET_MIN = 0
+OFFSET_MAX = 1000
 
 # el primer elemento de algunas de las lista es como
 # esta definido por defecto en las tablas de la base de datos sql
@@ -46,11 +50,7 @@ USER_TYPE = ('usertype','user_type','type')
 SEARCH = ('s','search','buscar')
 
 #default values
-LIMIT_MIN = 0
-LIMIT_MAX = 1000
 LIMIT_DEFAULT = 100
-OFFSET_MIN = 0
-OFFSET_MAX = 1000
 OFFSET_DEFAULT = 0
 ORDERBY_DEFAULT = ID[0]
 ORDER_DEFAULT = DESCENDANT[0]
