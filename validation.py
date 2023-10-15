@@ -20,7 +20,6 @@ KEY_LENGTH = 6
 
 # el primer elemento de algunas de las lista es como
 # esta definido por defecto en las tablas de la base de datos sql
-
 #json verify
 DB_NULL = None
 ALLOWED_NULLS = ("null","NULL","Null","nulo","",None)
@@ -35,16 +34,38 @@ PRIVATE = ('private','x','X','qr','secreto')
 CREATED_AT = ('created_at','ca','fecha_de_creacion')
 
 #list verify
-ASCENDANT = ('ASC','asc',0,'ascendant','ascendente')
-DESCENDANT = ('DESC','desc',1,'descendant','descendente')
-LIMIT = ('LIM','lim','limit','limite')
+ASCENDANT = ('ASC','asc','ascendant','ascendente')
+DESCENDANT = ('DESC','desc','descendant','descendente')
+LIMIT = ('LIMIT','lim','limit','limite')
 OFFSET = ('OFFSET','OFF','offs','offset')
-ORDERBY = ('ORDER BY','order','orderBy','orderby','order_by')
+ORDERBY = ('ORDER BY','orderBy','orderby','order_by')
 ORDER = ('order','ORDER')
 ID = ('id','Id','ID')
 INFO = ('info','Info')
 USER_TYPE = ('usertype','user_type','type')
 SEARCH = ('s','search','buscar')
+
+#default values
+LIMIT_MIN = 0
+LIMIT_MAX = 1000
+LIMIT_DEFAULT = 100
+OFFSET_MIN = 0
+OFFSET_MAX = 1000
+OFFSET_DEFAULT = 0
+ORDERBY_DEFAULT = ID[0]
+ORDER_DEFAULT = DESCENDANT[0]
+USER_TYPE_DEFAULT = ID[0]
+
+INFO_FOR_USER = ((ID[0],ID),(USER[0],USER),(FIRSTNAME[0],FIRSTNAME),(LASTNAME[0],LASTNAME),(ACCESS[0],ACCESS),(CREATED_AT[0],CREATED_AT))
+
+USERINFO_JSON = {
+    ID[0]: 'id',
+    USER[0]: 'u',
+    FIRSTNAME[0]: 'fn',
+    LASTNAME[0]: 'ln',
+    ACCESS[0]: 'a',
+    CREATED_AT[0]: 'ca'
+    }
 
 #all_items = [ALL[0],USER[0],KEY[0],ACCESS[0],FIRSTNAME[0],LASTNAME[0],SESSION[0],PRIVATE[0],CREATED_AT[0],LIMIT[0],OFFSET[0]]
 
@@ -156,46 +177,83 @@ class validate():
             except:
                 return None
 
-    def userinfo(session, uri):
-        user = json_in_list(uri,USER)
-        info = json_in_list(uri,INFO)
-        userType = json_in_list(uri,USER_TYPE)
-        limit = json_in_list(uri,LIMIT)
-        offset = json_in_list(uri,OFFSET)
-        orderBy = json_in_list(uri,ORDERBY)
-        order = json_in_list(uri,ORDER)
+    def userList(json_data, userType):
+        USERLIST_SQL_QUERY = f"SELECT {userType} FROM user"
 
-        user = user.split(',')
-        info = info.split(',')
+        userList = json_in_list(json_data,USER)
 
-        list = []
-
-        for u in user:
-            u = validate.user(u)
-            if u is not None: list.append(u)
-        user = list.copy()
-        list.clear()
-
-        for i in info:
-            if i is not None: list.append(i.strip())
-        info = list.copy()
-        list.clear()
-
-        #verificar cada uno de los elementos de info sean validos
-        if list_in_list(info,ID): list.append(ID[0])
-        if list_in_list(info,USER): list.append(USER[0])
-        if list_in_list(info,FIRSTNAME): list.append(FIRSTNAME[0])
-        if list_in_list(info,LASTNAME): list.append(LASTNAME[0])
-        if list_in_list(info,ACCESS): list.append(ACCESS[0])
-        if list_in_list(info,CREATED_AT): list.append(CREATED_AT[0])
-        info = list.copy()
-        list.clear()
-
+        allowed_users = execute(USERLIST_SQL_QUERY)
+        if allowed_users: allowed_users = [u[0] for u in allowed_users if u is not None]
+        userList = [validate.user(u) for u in userList.split(',') if u is not None and u.strip() in allowed_users]
         
+        return userList
+    
+    def infoList(json_data):
+        infoList = json_in_list(json_data,INFO)
 
-        print(user)
-        print(info)
-        return (user,info) 
+        infoList = [i.strip() for i in infoList.split(',') if i is not None]
+        
+        list = []
+        for i in infoList:
+            for name_default, list_of_names in INFO_FOR_USER:
+                if i in list_of_names:
+                    list.append(name_default)
+                    break
+        infoList = list.copy()
+        list.clear()
+
+        return infoList
+    
+    def userType(json_data):
+        value = json_in_list(json_data,USER_TYPE)
+        NewUserType = None
+        for name_default, list_of_names in INFO_FOR_USER:
+            for l in list_of_names:
+                if value == l:
+                    NewUserType = name_default
+                    break
+
+        return NewUserType or ID[0]
+    
+    def limit(json_data):
+        value = json_in_list(json_data,LIMIT)
+        try:
+            limit = int(value)
+            if limit >= LIMIT_MIN and limit <= LIMIT_MAX:
+                return limit
+            else:
+                return LIMIT_DEFAULT
+        except:
+            return None
+
+    def offset(json_data):
+        value = json_in_list(json_data,OFFSET)
+        try:
+            offset = int(value)
+            if offset >= OFFSET_MIN and offset <= OFFSET_MAX:
+                return offset
+            else:
+                return OFFSET_DEFAULT
+        except:
+            return None
+    
+    def orderBy(json_data):
+        value = json_in_list(json_data,ORDERBY)
+        NewOrderBy = None
+        for name_default, list_of_names in INFO_FOR_USER:
+            for l in list_of_names:
+                if value == l:
+                    NewOrderBy = name_default
+                    break
+        return NewOrderBy or ORDERBY_DEFAULT
+    
+    def order(json_data):
+        value = json_in_list(json_data,ORDER)
+        order = None
+        if value in ASCENDANT: order = ASCENDANT[0]
+        elif value in DESCENDANT: order = DESCENDANT[0]
+        order = order or ORDER_DEFAULT
+        return order
 
 def test():
     test = []
@@ -206,14 +264,14 @@ def test():
         print(test)
 
 json_uri_test = {
-"user": "user, user, user",
-"info": "id,u,fn,ln,a,ca",
+"user": "Admin, user, user, Marcos, Franchezco, virgolimi, fieaaauu, la maquina mas veloz, de tote, italie, fiiii",
+"usertype":"user",
+"info": "fn,id,u,ln,a,ca",
 "limit": "101",
 "offset": "1",
-"orderby": "id",
-"order": "asc",
+"orderby": "fn",
+"order": 'ascendente',
 "nmms": "a"
 }
 
-print(validate.userinfo("xd",json_uri_test))
 # print(validate.user({"u":"soy subnormal"}))
