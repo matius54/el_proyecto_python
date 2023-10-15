@@ -1,0 +1,35 @@
+ * {
+box-sizing: border-box;
+transition: all 0.5s ease;
+}
+
+body{
+    background-image: linear-gradient(-45deg, #831e7a, #6313ad, #146a8a, #138168);
+	background-size: 400% 400%;
+	animation: gradient 10s ease infinite;
+	height: 100vh;
+}
+
+.img{
+border-style: dashed;
+border-color:black ;
+border-radius: 30px;
+}
+
+.container {
+    width: fit-content;
+    height: 98vh;
+    border: 0;
+}
+
+@keyframes gradient {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+<title>WL cliente - Prueba la API</title>
+<style>
+html { color-scheme: dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+    <div>
+        <span>alpha v1</span>
+        <h1>Prueba la API</h1>
+    </div>
+    <label>direccion de la api (no cambiar a menos  que sea necesario)</label>
+    <br>
+    <input type="text" id="host" oninput="hosthandle(false)" size="50" placeholder="https://www.website.com/api" value="../../../api">
+    <button onclick="hosthandle(true)">Restablecer</button>
+<div class="container">
+    <h2>/login</h2>
+    <label>usuario:</label>
+    <input type="text" id="login-usuario" oninput="login(false)" maxlength="64">
+    <label>totp:</label>
+    <input type="text" id="login-totp" oninput="login(false)" maxlength="6" size="8">
+    <button onclick="login(true)">Enviar POST</button>
+    <br>
+    <br>
+    <label>Solicitud JSON = </label>
+    <code id="login-in"></code>
+    <br>
+    <label>Respuesta JSON = </label>
+    <code id="login-out">{}</code>
+    <br>
+    <label>Codigo de estado de respuesta HTML = </label>
+    <code id="login-statuscode">
+        0 UNDEFINED
+    </code>
+</div>
+<div class="container">
+    <h2>/register</h2>
+    <label>sesion vinculada a una cuenta admin:</label>
+    <input type="text" id="register-token" oninput="register(false)" maxlength="64" size="72">
+    <br>
+    <label>usuario:</label>
+    <input type="text" id="register-usuario" oninput="register(false)" maxlength="64">
+    <br>
+    <label>nombre:</label>
+    <input type="text" id="register-fn" oninput="register(false)" maxlength="64">
+    <br>
+    <label>apellido:</label>
+    <input type="text" id="register-ln" oninput="register(false)" maxlength="64">
+    <label>nivel de acceso:</label>
+    <input type="number" id="register-access" oninput="register(false)" min="0" max="5" value="0" size="4">
+    <button onclick="register(true)">Enviar POST</button>
+    <br>
+    <label>mostrar codigo QR: </label>
+    <input type="checkbox" id="register-qr-gen" oninput="qrmadein()" value="true">
+    <br>
+    <br>
+    <label>Solicitud JSON = </label>
+    <code id="register-in"></code>
+    <br>
+    <label>Respuesta JSON = </label>
+    <code id="register-out">{}</code>
+    <br>
+    <label>Codigo de estado de respuesta HTML = </label>
+    <code id="register-statuscode">
+        0 UNDEFINED
+    </code>
+    <br>
+    <br>
+    <div id="register-qr" class="qr"></div>
+    <label id="register-qr-label"></label>
+</div>
+<div class="container">
+    <h2>/logout</h2>
+
+    <label>token de sesion activa a cerrar:</label>
+    <br>
+    <input type="text" id="logout-session" oninput="logout(false)" maxlength="64" size="72">
+    <br>
+    <label>Cerrar todas las sesiones vinculadas a esa cuenta:</label>
+    <input type="checkbox" id="logout-all" onchange="logout(false)">
+    <br>
+    <button onclick="logout(true)">Enviar POST</button>
+    <br>
+    <br>
+    <label>Solicitud JSON = </label>
+    <code id="logout-in"></code>
+    <br>
+    <label>Respuesta JSON = </label>
+    <code id="logout-out">{}</code>
+    <br>
+    <label>Codigo de estado de respuesta HTML = </label>
+    <code id="logout-statuscode">
+        0 UNDEFINED
+    </code>
+</div>
+<div class="container">
+    <h2>/unregister</h2>
+    <label>usuario:</label>
+    <input type="text" id="unregister-usuario" oninput="unregister(false)" maxlength="64">
+    <label>totp:</label>
+    <input type="text" id="unregister-totp" oninput="unregister(false)" maxlength="6" size="8">
+    <button onclick="unregister(true)">Enviar POST</button>
+    <br>
+    <br>
+    <label>Solicitud JSON = </label>
+    <code id="unregister-in"></code>
+    <br>
+    <label>Respuesta JSON = </label>
+    <code id="unregister-out">{}</code>
+    <br>
+    <label>Codigo de estado de respuesta HTML = </label>
+    <code id="unregister-statuscode">
+        0 UNDEFINED
+    </code>
+</div>
+<div class="container">
+    <h2>/userinfo</h2>
+    <label>Token de sesion: </label>
+    <input type="text" id="userinfo-session" maxlength="64" size="72" oninput="userinfo(false)">
+    <br>
+    <h3>Recuperar informacion de: </h3>
+    <br>
+    <label>usuarios: </label>
+    <br>
+    <textarea id="userinfo-users" rows="4" cols="30" placeholder="UserName1, UserName2, UserName3, UserId4, UserId5 ..." oninput="userinfo(false)"></textarea>
+    <br>
+    <label>todos los usuarios</label>
+    <input type="checkbox" id="userinfo-all-users" onchange="userinfo(false)">
+    <br>
+    <h3>¿Que desea Recuperar?</h3>
+    <br>
+    <label>id / identificador numerico: </label>
+    <input type="checkbox" id="userinfo-id" onchange="userinfo(false)">
+    <br>
+    <label>username / usuario: </label>
+    <input type="checkbox" id="userinfo-user" onchange="userinfo(false)">
+    <br>
+    <label>first name / nombre: </label>
+    <input type="checkbox" id="userinfo-name" onchange="userinfo(false)">
+    <br>
+    <label>last name / apellido: </label>
+    <input type="checkbox" id="userinfo-lname" onchange="userinfo(false)">
+    <br>
+    <label>access level / nivel de acceso: </label>
+    <input type="checkbox" id="userinfo-access" onchange="userinfo(false)">
+    <br>
+    <label>created at / fecha de creacion: </label>
+    <input type="checkbox" id="userinfo-create" onchange="userinfo(false)">
+    <button onclick="userinfo(2)">Seleccionar todo</button>
+    <br>
+    <br>
+    <label>Limit: </label>
+    <input type="number" id="userinfo-limit" min="0" max="1000" size="6" value="100" oninput="userinfo(false)">
+    <label>Offset: </label>
+    <input type="number" id="userinfo-offset" min="0" max="100" size="6" value="0" oninput="userinfo(false)">
+    
+    <br>
+    <button onclick="userinfo(true)">Enviar GET</button>
+    <br>
+    <br>
+    <label>Solicitud HTML = </label>
+    <br>
+    <code id="userinfo-in"></code>
+    <br>
+    <br>
+    <label>Respuesta JSON = </label>
+    <code id="userinfo-out">{}</code>
+    <br>
+    <label>Codigo de estado de respuesta HTML = </label>
+    <code id="userinfo-statuscode">
+        0 UNDEFINED
+    </code>
+</div>
+<div class="container">
+    <h2>/test</h2>
+    <label>argumentos en url: </label>
+    <textarea id="test-url" rows="4" cols="30" placeholder="Argumento1, Argumento2, Argumento3, ..." oninput="test(false)"></textarea>
+    <br>
+    <label>argumentos en uri: </label>
+    <textarea id="test-uri" rows="4" cols="30" placeholder="Argumento1=Valor1, Argumento2=Valor2, Argumento3=Valor3, ..." oninput="test(false)"></textarea>
+    <br>
+    <button onclick="test(true)">Enviar GET</button>
+    <br>
+    <br>
+    <label>Solicitud HTML = </label>
+    <code id="test-in"></code>
+    <br>
+    <label>Respuesta JSON = </label>
+    <code id="test-out">{}</code>
+    <br>
+    <label>Codigo de estado de respuesta HTML = </label>
+    <code id="test-statuscode">
+        0 UNDEFINED
+    </code>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
