@@ -134,7 +134,7 @@ def userinfo(session, userList, infoList, userType, orderBy, order, limit, offse
                 allowed_users = cursor.fetchall()
                 if allowed_users: allowed_users = [u[0] for u in allowed_users if u is not None]
                 if len(userList) == 1 and userList[0] in validation.ALL: userList = allowed_users.copy()
-                if len(infoList) == 1 and infoList[0] in validation.ALL: infoList = [u for u in validation.INFO_FOR_USER]
+                if len(infoList) == 1 and infoList[0] in validation.ALL: infoList = [u[0] for u in validation.INFO_FOR_USER]
                 # esta parte de la consulta sql es muy mejorable, que bien que mariadb permite comparar numeros enteros en forma de 'string'
                 userinfo_sql_query = (
                     f"SELECT {', '.join([f'{q}' for q in infoList])} FROM user WHERE "

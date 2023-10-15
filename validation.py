@@ -212,8 +212,7 @@ class validate():
                 if value == l:
                     NewUserType = name_default
                     break
-
-        return NewUserType or ID[0]
+        return NewUserType if NewUserType is not None else ID[0]
     
     def limit(json_data):
         value = json_in_list(json_data,LIMIT)
