@@ -23,7 +23,6 @@ class DBHelp():
         result = cursor.fetchone()
         if cursor.rowcount == 1:
             return result[0]
-        print(f"sesiones abiertas = {cursor.rowcount}")
         return None
 
 def b64token_gen(length=64):
@@ -73,12 +72,12 @@ def logout(session):
             username = result[0]
             cursor.execute(SESSION_DELETE_SESSION, (session,))
             database.commit()
-            print(f"sesion cerrada {cursor.rowcount} para usuario '{username}'")
+            print(f"{cursor.rowcount} sesion cerrada vinculad a usuario '{username}'")
             if cursor.rowcount > 0:
                 return True
     return False
 
-def register(session, user=None, firstname=None, lastname=None, access=None):
+def register(session, user=None, firstname=None, lastname=None, access=None, secret=None, override=False):
     REGISTER_GET_ACCES_FROM_TOKEN = "SELECT access_lvl FROM user JOIN session_token ON user_id = user.id WHERE token = %s"
     REGISTER_TOTP_DUPLICATE_VERIFICATION = "SELECT COUNT(*) FROM user WHERE private = %s"
     REGISTER_INSERT = "INSERT INTO user (private, username, access_lvl, first_name, last_name) VALUES (%s,%s,%s,%s,%s)"
@@ -87,15 +86,19 @@ def register(session, user=None, firstname=None, lastname=None, access=None):
     newFirstname = firstname or None
     newLastname = lastname or None
     newAccess = access or 0
-    if session is not None and newUser is not None:
+    otptoken = None
+    if (override is not None or session is not None) and newUser:
         with db.connection() as (database, cursor):
-            cursor.execute(REGISTER_GET_ACCES_FROM_TOKEN,(session,))
-            result = cursor.fetchone()
+            if not override:
+                cursor.execute(REGISTER_GET_ACCES_FROM_TOKEN,(session,))
+                result = cursor.fetchone()
+            else:
+                result = (validation.ACCESS_MAX_VALUE + 1,)
             if result is not None:
                 access = int(result[0])
                 if newAccess < access and newAccess >= validation.ACCESS_MIN_VALUE:
                     while True:
-                        otptoken = otp_gen()
+                        otptoken = secret if otptoken is None and secret is not None and override and validation.validate.private(secret) else otp_gen()
                         cursor.execute(REGISTER_TOTP_DUPLICATE_VERIFICATION,(otptoken,))
                         if not int(cursor.fetchone()[0]):
                             break
@@ -113,6 +116,7 @@ def unregister(username,key):
             result = cursor.fetchone()
             if result is not None: logout(session = result[0])
             cursor.execute(UNREGISTER_DELETE_USER,(username,))
+            print(f"usuario '{username}' eliminado del sistema correctamente.")
             database.commit()
             return True
     return False

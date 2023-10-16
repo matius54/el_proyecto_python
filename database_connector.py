@@ -1,8 +1,6 @@
 import mysql.connector
-import base64
-import os
 
-DB_NAME = 'db1'
+DB_NAME = 'db2'
 DB_HOST = 'localhost'
 DB_USER = 'root'
 DB_PASS = ''
@@ -11,8 +9,6 @@ DB_PORT = 3306
 # esta es la estructura en sql anidado de todas las tablas dentro de la bases de datos
 # se usa por la funcion initialize_all_tables() en caso de que sea necesario volver a crear las tablas
 # si la cambias solo tendra efecto al crear de nuevo la tabla afectada
-
-
 
 TABLES_STRUCTURE = {
     'user': [
@@ -146,10 +142,7 @@ def initialize_all_tables():
                 else:
                     # Ocurrio otro error, manejarlo según tus necesidades
                     print(f"Error al verificar la tabla '{tabla}': {err}")
-            else:
                 # La tabla ya existe
-                print(f"La tabla '{tabla}' ya existe.")
+                # print(f"La tabla '{tabla}' ya existe.")
         # Confirmar los cambios y cerrar la conexión
         database.commit()
-
-initialize_all_tables()

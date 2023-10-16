@@ -12,7 +12,7 @@ import json
 # este sive para deducir el tipo de archivo en http, a partir de su formato, al enviar datos por http deber incluir el formato de lo que estas enviando
 import mimetypes
 # la clase validate se usara para validar toda la informacion
-from validation import validate
+from validation import validate, USER, ACCESS_MAX_VALUE
 # el modelo procesa la mayor parte de la informacion
 from model import login, logout, register, unregister, userinfo
 # algunas variables para cambiar facilmente
@@ -25,17 +25,17 @@ DEF_SERVER_PORT = 8080
 SERVER_OBFUSCATION = True
 # cambia el nombre en la cabecera de respuesta server, si es None no envia la cabecera
 SERVER_NAME = "Not GlassFish"
-# en caso de reinicializacion del servidor de la base de datos
-# se añadira automaticamente este usuario
-SERVER_DEFAULT_ADMIN_USER = {
-    'username'   : 'Admin',
-    'firstname'  : 'The Lord',
-    'lastname'   : 'Administrator',
-    'access_lvl' : 3
-}
+
+class default_admin():
+    username = 'Admin'
+    firstname = 'The Lord'
+    lastname = 'Administrator'
+    access = ACCESS_MAX_VALUE
+    secret = "NNHUYNDPJAVVEN2H"
+    # secret = None
+
 # Se usara para autenticar el usuario de arriba, si es None
 # se generara una aleatoria y se imprimira en pantalla el primer inicio
-SERVER_TOTP_SECRET = None
 # el tiempo que espera en segundos el servidor a que se complete una solicitud
 # por defecto 5, si se pasa de ese tiempo se genera un timeout 
 CONECTION_TIME_OUT_SECS = 5
@@ -56,8 +56,29 @@ LOGOUT = 'logout' # POST
 REGISTER = 'register' # POST
 UNREGISTER = 'unregister' # POST
 
-print(f"host seleccionado = {HOST}")
-print(f"puerto seleccionado = {DEF_SERVER_PORT}")
+def check_admin_user():
+    if not DB.execute(f"SELECT COUNT(*) FROM user")[0][0]:
+        try:
+            user = validate.user(default_admin.username)
+            secret = register(
+                session=None,
+                user=user,
+                firstname=validate.firstname(default_admin.firstname),
+                lastname=validate.lastname(default_admin.lastname),
+                access=validate.access(default_admin.access),
+                secret=validate.private(default_admin.secret),
+                override=True
+                )
+            print(f"\nusuario administrador inicializado correctamente.\n\nusername: '{user}'\nsecret: '{secret}'")
+        except Exception as Err:
+            print(Err)
+            print('\nerror inicializando el usuario administrador\n')
+        return
+
+DB.initialize_all_tables()
+check_admin_user()
+
+print(f"\nhost seleccionado: '{HOST}', puerto seleccionado: {DEF_SERVER_PORT}")
 
 class MyapiHTTP(BaseHTTPRequestHandler):
     #tiempo de espera en segundos antes de cerrar coneccion por timeout 
@@ -213,7 +234,5 @@ class MyapiHTTP(BaseHTTPRequestHandler):
         
 
 server = HTTPServer((HOST, DEF_SERVER_PORT), MyapiHTTP)
-print(f"Running api on http://{HOST}:{DEF_SERVER_PORT}{START_API_SERVER_AT}")
-print(f"Running webpage on http://{HOST}:{DEF_SERVER_PORT}/web/index.html")
-print(f"Running cdn on http://{HOST}:{DEF_SERVER_PORT}/cdn")
+print(f"\nRunning api on http://{HOST}:{DEF_SERVER_PORT}/{START_API_SERVER_AT}")
 server.serve_forever()
