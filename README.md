@@ -17,7 +17,7 @@ servidor api escrito en python para el proyecto sociotecnologico
 3) Ejecucion:
    - activa el entorno virtual de python usando `el_proyecto\Scripts\activate.bat`
    - y por ultimo inicia el servidor usando `python app.py`
-   - entra en http://localhost:8080/api y deberia funcionar
+   - entra en http://localhost:8080/api y deberia responder con un `Test, OK` si esta funcionando todo
 4) Por Ultimo:
    - utiliza `Ctrl + C` para detenerlo
    - y cada vez que necesites reiniciar el servidor debe repetir los pasos de Ejecucion.
