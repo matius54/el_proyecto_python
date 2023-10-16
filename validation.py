@@ -1,4 +1,4 @@
-from database_connector import execute
+from database_connector import execute, TABLES_STRUCTURE
 
 # USERINFO = '/userinfo' # GET
 # TEST = '/test' # GET
@@ -39,14 +39,17 @@ INFO = ('info','Info')
 SEARCH = ('s','search','buscar')
 KEY = ('k','key','totp','pass')
 
-# Database tables
-USER = ('username','u','user','usuario')
-ACCESS = ('access_lvl','a','access','acceso')
-FIRSTNAME = ('first_name','fn','firstname','nombre')
-LASTNAME = ('last_name','ln','lastname','apellido')
-SESSION = ('token','s','session','sesion')
-PRIVATE = ('private','x','X','qr','secreto')
-CREATED_AT = ('created_at','ca','fecha_de_creacion')
+        # Database tables
+    #user
+ID =        (TABLES_STRUCTURE['user'][0][0],'id','ID','Id')
+PRIVATE =   (TABLES_STRUCTURE['user'][1][0],'x','X','qr','secreto')
+USER =      (TABLES_STRUCTURE['user'][2][0],'u','user','usuario')
+FIRSTNAME = (TABLES_STRUCTURE['user'][3][0],'fn','firstname','nombre')
+LASTNAME =  (TABLES_STRUCTURE['user'][4][0],'ln','lastname','apellido')
+ACCESS =    (TABLES_STRUCTURE['user'][5][0],'a','access','acceso')
+CREATED_AT = (TABLES_STRUCTURE['user'][6][0],'ca','fecha_de_creacion')
+    #session_token
+SESSION =   (TABLES_STRUCTURE['session_token'][3][0],'s','session','sesion')
 
 # SQL Database
 ALL = ('ALL','all','All','todo')
@@ -56,7 +59,6 @@ LIMIT = ('LIMIT','lim','limit','limite')
 OFFSET = ('OFFSET','OFF','offs','offset')
 ORDERBY = ('ORDER BY','orderBy','orderby','order_by')
 ORDER = ('ORDER','order')
-ID = ('ID','id','Id')
 
 # default values
 LIMIT_DEFAULT = 100
@@ -65,9 +67,12 @@ ORDERBY_DEFAULT = ID[0]
 ORDER_DEFAULT = DESCENDANT[0]
 USER_TYPE_DEFAULT = ID[0]
 
-# 
+# userinfo
 INFO_FOR_USER = ((ID[0],ID),(USER[0],USER),(FIRSTNAME[0],FIRSTNAME),(LASTNAME[0],LASTNAME),(ACCESS[0],ACCESS),(CREATED_AT[0],CREATED_AT))
 USERINFO_JSON = {v[0] : v[1][1] for v in INFO_FOR_USER}
+ITEMS = 'items'
+ITEM_COUNT = 'item_count'
+LOCAL_TIME = 'local_time'
 
 def json_in_list(json,list):
     # esta funcion como su nombre lo indica,

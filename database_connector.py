@@ -13,12 +13,9 @@ DB_PORT = 3306
 # se usa por la funcion initialize_all_tables() en caso de que sea necesario volver a crear las tablas
 # si la cambias solo tendra efecto al crear de nuevo la tabla afectada
 
-tables_structure = {
-    'config': [
-        ('id', 'BIGINT AUTO_INCREMENT PRIMARY KEY'),
-        ('database_requests', 'BIGINT'),
-        ('private', 'CHAR(16) NOT NULL UNIQUE')
-    ],
+
+
+TABLES_STRUCTURE = {
     'user': [
         ('id', 'BIGINT AUTO_INCREMENT PRIMARY KEY'),
         ('private', 'CHAR(16) NOT NULL UNIQUE'),
@@ -136,7 +133,7 @@ def execute(sql_query, sql_values=(), commit=False):
 
 def initialize_all_tables():
     with connection() as (database, cursor):
-        for tabla, campos in tables_structure.items():
+        for tabla, campos in TABLES_STRUCTURE.items():
             try:
                 # Verificar si la tabla existe
                 cursor.execute(f"SELECT 1 FROM {tabla} LIMIT 1")

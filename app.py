@@ -117,14 +117,8 @@ class MyapiHTTP(BaseHTTPRequestHandler):
         else:
             self.send_error(HTTPStatus.NOT_FOUND)
     def do_GET(self):
-        uri_params = None
-        try:
-            url_params = unquote(urlparse(self.path).path).split('/')[1:]
-            uri_params = {v: k[0] for v, k in parse_qs(urlparse(self.path).query).items()}
-        except Exception as Err:
-            print(Err)
-            print('Error extrayendo parametros de la url')
-        print(url_params)
+        url_params = unquote(urlparse(self.path).path).split('/')[1:]
+        uri_params = {v: k[0] for v, k in parse_qs(urlparse(self.path).query).items()}
         if len(url_params) == 1 and url_params[0] == START_API_SERVER_AT:
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-type", "text/html; charset=utf-8")
@@ -133,7 +127,7 @@ class MyapiHTTP(BaseHTTPRequestHandler):
         elif url_params[1] == TEST:
             self.send_response(HTTPStatus.OK)
             self.send_json({
-                f"parametros de URL (relativos a '{TEST}')":{index: value for index, value in enumerate(url_params)},
+                f"parametros de URL (relativos a '{TEST}')":{index: value for index, value in enumerate(url_params[2:])},
                 'parametros de URI o query':uri_params
                 })
         elif url_params[1] == USERINFO:
@@ -154,7 +148,8 @@ class MyapiHTTP(BaseHTTPRequestHandler):
                 else:
                     self.send_response(HTTPStatus.UNAUTHORIZED)
                     self.end_headers()
-            except:
+            except Exception as Err:
+                print(Err)
                 self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR)
                 self.end_headers()
         path = os.path.abspath(os.getcwd() + '\App')
@@ -173,66 +168,51 @@ class MyapiHTTP(BaseHTTPRequestHandler):
 
     def do_POST(self):
         url_params = unquote(urlparse(self.path).path).split('/')[1:]
-        if url_params[1] == REGISTER:
-            json_data = self.get_json()
-            session = validate.session(json_data)
-            user = validate.user(json_data)
-            firstname = validate.firstname(json_data)
-            lastname = validate.lastname(json_data)
-            access = validate.access(json_data)
-            try:
-                result = register(session=session,user=user,firstname=firstname,lastname=lastname,access=access)
-                if result is None:
-                    self.send_response(HTTPStatus.UNAUTHORIZED)
+        json_data = self.get_json()
+        try:
+            if len(url_params) >= 1:
+                if url_params[1] == REGISTER:
+                    session = validate.session(json_data)
+                    user = validate.user(json_data)
+                    firstname = validate.firstname(json_data)
+                    lastname = validate.lastname(json_data)
+                    access = validate.access(json_data)
+                    result = register(session=session,user=user,firstname=firstname,lastname=lastname,access=access)
+                    if result is None:
+                        self.send_response(HTTPStatus.UNAUTHORIZED)
+                        self.end_headers()
+                    else:
+                        self.send_json({"u":user,"x":result})
+                elif url_params[1] == LOGIN:
+                    user = validate.user(json_data)
+                    totpkey = validate.key(json_data)
+                    session_token = login(username = user, key = totpkey)
+                    if session_token is None:
+                        self.send_response(HTTPStatus.UNAUTHORIZED)
+                        self.end_headers()
+                    else:
+                        self.send_response(HTTPStatus.OK)
+                        self.send_json({'s':session_token})
+                elif url_params[1] == LOGOUT:
+                    session = validate.session(json_data)
+                    result = logout(session)
+                    if not result:
+                        self.send_response(HTTPStatus.UNAUTHORIZED)
+                    elif result:
+                        self.send_response(HTTPStatus.OK)
                     self.end_headers()
-                else:
-                    self.send_json({"u":user,"x":result})
-            except Exception as Err:
-                print(Err)
-                self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR)
-                self.end_headers()
-        elif url_params[1] == LOGIN:
-            json_data = self.get_json()
-            try:
-                user = validate.user(json_data)
-                totpkey = validate.key(json_data)
-                session_token = login(username = user, key = totpkey)
-                if session_token is None:
-                    self.send_response(HTTPStatus.UNAUTHORIZED)
+                elif url_params[1] == UNREGISTER:
+                    user = validate.user(json_data)
+                    totpkey = validate.key(json_data)
+                    result = unregister(username=user, key=totpkey)
+                    if result:
+                        self.send_response(HTTPStatus.OK)
+                    else:
+                        self.send_response(HTTPStatus.UNAUTHORIZED)
                     self.end_headers()
-                else:
-                    self.send_response(HTTPStatus.OK)
-                    self.send_json({'s':session_token})
-            except Exception as Err:
-                print(Err)
-                self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR)
-                self.end_headers()
-        elif url_params[1] == LOGOUT:
-            json_data = self.get_json()
-            try:
-                session = validate.session(json_data)
-                result = logout(session)
-                if not result:
-                    self.send_response(HTTPStatus.UNAUTHORIZED)
-                elif result:
-                    self.send_response(HTTPStatus.OK)
-            except Exception as Err:
-                print(Err)
-                self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR)
-            self.end_headers()
-        elif url_params[1] == UNREGISTER:
-            json_data = self.get_json()
-            user = validate.user(json_data)
-            totpkey = validate.key(json_data)
-            try:
-                result = unregister(username=user, key=totpkey)
-                if result:
-                    self.send_response(HTTPStatus.OK)
-                else:
-                    self.send_response(HTTPStatus.UNAUTHORIZED)
-            except Exception as Err:
-                print(Err)
-                self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR)
+        except Exception as Err:
+            print(Err)
+            self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR)
             self.end_headers()
 
 # print(f'-- {self.client_address[0]} - - [{time.strftime("%d/%m/%Y %H:%M:%S", time.localtime())}] "{self.requestline}" - (Empty HTTP response) Razon: {errores}')

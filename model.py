@@ -2,6 +2,7 @@ import database_connector as db
 from pyotp import TOTP as totp
 import base64
 import os
+from datetime import datetime
 import validation
 
 class DBHelp():
@@ -127,8 +128,9 @@ def userinfo(session, userList, infoList, userType, orderBy, order, limit, offse
         offset = offset if offset is not None else validation.OFFSET_DEFAULT
         with db.connection() as (_, cursor):
             cursor.execute(f"SELECT {validation.USER[0]}, {validation.ACCESS[0]} FROM user JOIN session_token ON user_id = user.id WHERE token = %s",(session,))
-            (userName, access) = cursor.fetchone()
-            if access is not None:
+            result = cursor.fetchone()
+            if result is not None:
+                (userName, access) = result
                 access = int(access)
                 cursor.execute(f"SELECT {userType} FROM user WHERE {validation.ACCESS[0]} <= %s",(access,))
                 allowed_users = cursor.fetchall()
@@ -142,13 +144,18 @@ def userinfo(session, userList, infoList, userType, orderBy, order, limit, offse
                     + f" ORDER BY {orderBy} {order} LIMIT {limit} OFFSET {offset}"
                 )
                 cursor.execute(userinfo_sql_query)
-                response = {}
                 result = cursor.fetchall()
+
+                # construccion de la respuesta
+                response = {}
+                response[validation.ITEM_COUNT]=len(result)
+                response[validation.LOCAL_TIME]=datetime.now().isoformat()
+                response[validation.ITEMS] = {}
                 for row_index, row in enumerate(result):
-                    response[row_index + offset] = {}
+                    response[validation.ITEMS][row_index + offset] = {}
                     for column_index, value in enumerate(row):
                         column_name = cursor.column_names[column_index]
-                        response[row_index + offset][validation.USERINFO_JSON[column_name]] = value if column_name != validation.CREATED_AT[0] else value.isoformat()
+                        response[validation.ITEMS][row_index + offset][validation.USERINFO_JSON[column_name]] = value if column_name != validation.CREATED_AT[0] else value.isoformat()
                 print(f"usuario '{userName}' ha solicitado informacion en userinfo")
                 return response
     return None
