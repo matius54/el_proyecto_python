@@ -43,8 +43,8 @@ def otp_gen():
 def totp_user_verify(username,key):
     result = db.execute("SELECT private FROM user WHERE username = %s",(username,))
     # "list index out of range" si el usuario no existe en la base de datos
-    private = result[0][0]
-    return totp(private).verify(key)
+    if result: return totp(result[0][0]).verify(key)
+    return False
 
 def login(username,key):
     LOGIN_COUNT_SESSION = "SELECT COUNT(*) FROM session_token WHERE token = %s"
