@@ -1,5 +1,4 @@
 import mysql.connector
-from urllib.parse import quote, urlparse, parse_qs, unquote
 import base64
 import os
 

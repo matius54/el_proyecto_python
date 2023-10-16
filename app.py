@@ -1,12 +1,6 @@
 import database_connector as DB
-# libreria base64 para generar contrasenas codificar y decodificar
-import base64
 # esta libreria sirve para tener acceso a algunas funciones del sistema, como leer/escribir archivos y ejecutar codigo externo
 import os
-# libreria para verificar codigos otp
-from pyotp import TOTP as totp
-# libreria para saber el tiempo local del sistema
-import time
 # libreria para poner el codigo de estado escrito en lugar del 20 o 404
 from http import HTTPStatus
 # libreria encargada de recibir y administrar las solicitudes http para la api y el servidor
