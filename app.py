@@ -49,18 +49,18 @@ CONECTION_TIME_OUT_SECS = 5
 # o que cualquier pagina pueda usar esta api
 ALLOW_CROSS_ORIGIN = True
 # punto de inicio del servidor api
-START_API_SERVER_AT = '/api'
+START_API_SERVER_AT = 'api'
 
 # direcciones url permitidas para el header de respuesta Access-Control-Allow-Origin para peticiones http a la api.
 ALLOWED_URLS = ['*']
 
 # endpoints activos y sus direcciones parametrizadas
-USERINFO = '/userinfo' # GET
-TEST = '/test' # GET
-LOGIN = '/login' # POST
-LOGOUT = '/logout' # POST
-REGISTER = '/register' # POST
-UNREGISTER = '/unregister' # POST
+USERINFO = 'userinfo' # GET
+TEST = 'test' # GET
+LOGIN = 'login' # POST
+LOGOUT = 'logout' # POST
+REGISTER = 'register' # POST
+UNREGISTER = 'unregister' # POST
 
 print(f"host seleccionado = {HOST}")
 print(f"puerto seleccionado = {DEF_SERVER_PORT}")
@@ -68,7 +68,8 @@ print(f"puerto seleccionado = {DEF_SERVER_PORT}")
 class MyapiHTTP(BaseHTTPRequestHandler):
     #tiempo de espera en segundos antes de cerrar coneccion por timeout 
     timeout = CONECTION_TIME_OUT_SECS
-    #se esta sobreescribiendo el metodo send_response() para no enviar informacion sensible del servidor en las solicitudes
+    #se esta sobreescribiendo el metodo send_response() para opcionalmente
+    # no enviar informacion sensible del servidor en las solicitudes
     def send_response(self, code, message=None):
         self.log_request(code)
         self.send_response_only(code, message)
@@ -115,33 +116,28 @@ class MyapiHTTP(BaseHTTPRequestHandler):
             self.end_headers()
         else:
             self.send_error(HTTPStatus.NOT_FOUND)
-
     def do_GET(self):
-        errores='Recurso No Encontrado 404'
-        url = urlparse(self.path)
         uri_params = None
         try:
-            uri_params = {v: k[0] for v, k in parse_qs(url.query).items()}
+            url_params = unquote(urlparse(self.path).path).split('/')[1:]
+            uri_params = {v: k[0] for v, k in parse_qs(urlparse(self.path).query).items()}
         except Exception as Err:
             print(Err)
-            print('Error extrayendo parametros uri de la url')
-        if url.path == START_API_SERVER_AT:
+            print('Error extrayendo parametros de la url')
+        print(url_params)
+        if len(url_params) == 1 and url_params[0] == START_API_SERVER_AT:
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-type", "text/html; charset=utf-8")
             self.end_headers()
             self.wfile.write(bytes("Test, OK", "utf-8"))
-            errores = 'no'
-        elif url.path == START_API_SERVER_AT + TEST or url.path.startswith(START_API_SERVER_AT + TEST + '/') or url.path.startswith(START_API_SERVER_AT + TEST + '?'):
-            url_params = unquote(url.path.replace(START_API_SERVER_AT + TEST,'')).split('/')[1:]
+        elif url_params[1] == TEST:
             self.send_response(HTTPStatus.OK)
             self.send_json({
                 f"parametros de URL (relativos a '{TEST}')":{index: value for index, value in enumerate(url_params)},
                 'parametros de URI o query':uri_params
                 })
-            errores = 'no'
-        elif url.path.startswith(START_API_SERVER_AT + USERINFO + '/'):
-            url_params = unquote(url.path.replace(START_API_SERVER_AT + USERINFO,'')).split('/')[1:]
-            session_token = url_params[0]
+        elif url_params[1] == USERINFO:
+            session_token = url_params[2]
             session_token = validate.session(session_token)
             userType = validate.userType(uri_params)
             userL = validate.userList(uri_params,userType)
@@ -161,15 +157,8 @@ class MyapiHTTP(BaseHTTPRequestHandler):
             except:
                 self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR)
                 self.end_headers()
-            errores = 'no'
-        elif self.path == '/web' or self.path == '/web/' or self.path == '/':
-            self.send_response(HTTPStatus.MOVED_PERMANENTLY)
-            self.send_header('Location', '/web/index.html')
-            self.end_headers()
-            print(f"\t--- redireccionado correctamente ---\n'{self.path}' --> '/web/index.html'")
-            errores = 'no'
         path = os.path.abspath(os.getcwd() + '\App')
-        if path.startswith(os.getcwd()+'\App') and not self.path.endswith('.py') and errores == 'Recurso No Encontrado 404':
+        if path.startswith(os.getcwd()+'\App') and not self.path.endswith('.py') and False:
             path = f'{path}{unquote(self.path).replace("/", os.path.sep)}'
             try:
                 with open(path,'rb') as file:
@@ -178,14 +167,13 @@ class MyapiHTTP(BaseHTTPRequestHandler):
                     self.send_header('Content-type', mimetypes.guess_type(os.path.basename(path))[0]+"; charset=utf-8")
                     self.end_headers()
                     self.wfile.write(content)
-                    errores = 'no'
             except Exception as Err:
                 print(Err)
                 print("archivo no encontrado")
-        if(errores!='no'):print(f'{self.client_address[0]} - - [{time.strftime("%d/%m/%Y %H:%M:%S", time.localtime())}] "{self.requestline}" - (Empty HTTP response) Razon: {errores}')
+
     def do_POST(self):
-        errores='Recurso No Encontrado 404'
-        if urlparse(self.path).path == START_API_SERVER_AT + REGISTER:
+        url_params = unquote(urlparse(self.path).path).split('/')[1:]
+        if url_params[1] == REGISTER:
             json_data = self.get_json()
             session = validate.session(json_data)
             user = validate.user(json_data)
@@ -203,7 +191,7 @@ class MyapiHTTP(BaseHTTPRequestHandler):
                 print(Err)
                 self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR)
                 self.end_headers()
-        elif urlparse(self.path).path == START_API_SERVER_AT + LOGIN:
+        elif url_params[1] == LOGIN:
             json_data = self.get_json()
             try:
                 user = validate.user(json_data)
@@ -219,7 +207,7 @@ class MyapiHTTP(BaseHTTPRequestHandler):
                 print(Err)
                 self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR)
                 self.end_headers()
-        elif urlparse(self.path).path == START_API_SERVER_AT + LOGOUT:
+        elif url_params[1] == LOGOUT:
             json_data = self.get_json()
             try:
                 session = validate.session(json_data)
@@ -232,7 +220,7 @@ class MyapiHTTP(BaseHTTPRequestHandler):
                 print(Err)
                 self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR)
             self.end_headers()
-        elif urlparse(self.path).path == START_API_SERVER_AT + UNREGISTER:
+        elif url_params[1] == UNREGISTER:
             json_data = self.get_json()
             user = validate.user(json_data)
             totpkey = validate.key(json_data)
@@ -246,7 +234,8 @@ class MyapiHTTP(BaseHTTPRequestHandler):
                 print(Err)
                 self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR)
             self.end_headers()
-        if(errores!='no'):print(f'-- {self.client_address[0]} - - [{time.strftime("%d/%m/%Y %H:%M:%S", time.localtime())}] "{self.requestline}" - (Empty HTTP response) Razon: {errores}')
+
+# print(f'-- {self.client_address[0]} - - [{time.strftime("%d/%m/%Y %H:%M:%S", time.localtime())}] "{self.requestline}" - (Empty HTTP response) Razon: {errores}')
         
 
 server = HTTPServer((HOST, DEF_SERVER_PORT), MyapiHTTP)
