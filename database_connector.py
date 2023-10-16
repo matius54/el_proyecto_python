@@ -9,6 +9,10 @@ DB_USER = 'root'
 DB_PASS = ''
 DB_PORT = 3306
 
+# esta es la estructura en sql anidado de todas las tablas dentro de la bases de datos
+# se usa por la funcion initialize_all_tables() en caso de que sea necesario volver a crear las tablas
+# si la cambias solo tendra efecto al crear de nuevo la tabla afectada
+
 tables_structure = {
     'config': [
         ('id', 'BIGINT AUTO_INCREMENT PRIMARY KEY'),

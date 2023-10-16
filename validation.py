@@ -11,12 +11,13 @@ BASE32_CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
 UNALLOWED_CHARSET_IN_NAMES = ","
 
 #limits
-ACCESS_MIN_VALUE = -1
-ACCESS_MAX_VALUE = 3
 NAMES_MAX_LENGTH = 64
+NAMES_MIN_LENGTH = 0
 SESSION_LENGTH = 64
 PRIVATE_LENGTH = 16
 KEY_LENGTH = 6
+ACCESS_MIN_VALUE = -1
+ACCESS_MAX_VALUE = 3
 LIMIT_MIN = 0
 LIMIT_MAX = 1000
 OFFSET_MIN = 0
@@ -24,12 +25,22 @@ OFFSET_MAX = 1000
 
 # el primer elemento de algunas de las lista es como
 # esta definido por defecto en las tablas de la base de datos sql
-#json verify
+# el segundo elemento de algunas tablas esta definido como el
+# default que se usara en las respuestas de los json
+# (por ahora solo usado en userinfo)
+
+
 DB_NULL = None
 ALLOWED_NULLS = ("null","NULL","Null","nulo","",None)
-ALL = ('all','ALL','All','todo')
-USER = ('username','u','user','usuario')
+
+# list verify
+USER_TYPE = ('usertype','user_type','type')
+INFO = ('info','Info')
+SEARCH = ('s','search','buscar')
 KEY = ('k','key','totp','pass')
+
+# Database tables
+USER = ('username','u','user','usuario')
 ACCESS = ('access_lvl','a','access','acceso')
 FIRSTNAME = ('first_name','fn','firstname','nombre')
 LASTNAME = ('last_name','ln','lastname','apellido')
@@ -37,39 +48,32 @@ SESSION = ('token','s','session','sesion')
 PRIVATE = ('private','x','X','qr','secreto')
 CREATED_AT = ('created_at','ca','fecha_de_creacion')
 
-#list verify
+# SQL Database
+ALL = ('ALL','all','All','todo')
 ASCENDANT = ('ASC','asc','ascendant','ascendente')
 DESCENDANT = ('DESC','desc','descendant','descendente')
 LIMIT = ('LIMIT','lim','limit','limite')
 OFFSET = ('OFFSET','OFF','offs','offset')
 ORDERBY = ('ORDER BY','orderBy','orderby','order_by')
-ORDER = ('order','ORDER')
-ID = ('id','Id','ID')
-INFO = ('info','Info')
-USER_TYPE = ('usertype','user_type','type')
-SEARCH = ('s','search','buscar')
+ORDER = ('ORDER','order')
+ID = ('ID','id','Id')
 
-#default values
+# default values
 LIMIT_DEFAULT = 100
 OFFSET_DEFAULT = 0
 ORDERBY_DEFAULT = ID[0]
 ORDER_DEFAULT = DESCENDANT[0]
 USER_TYPE_DEFAULT = ID[0]
 
+# 
 INFO_FOR_USER = ((ID[0],ID),(USER[0],USER),(FIRSTNAME[0],FIRSTNAME),(LASTNAME[0],LASTNAME),(ACCESS[0],ACCESS),(CREATED_AT[0],CREATED_AT))
-
-USERINFO_JSON = {
-    ID[0]: 'id',
-    USER[0]: 'u',
-    FIRSTNAME[0]: 'fn',
-    LASTNAME[0]: 'ln',
-    ACCESS[0]: 'a',
-    CREATED_AT[0]: 'ca'
-    }
-
-#all_items = [ALL[0],USER[0],KEY[0],ACCESS[0],FIRSTNAME[0],LASTNAME[0],SESSION[0],PRIVATE[0],CREATED_AT[0],LIMIT[0],OFFSET[0]]
+USERINFO_JSON = {v[0] : v[1][1] for v in INFO_FOR_USER}
 
 def json_in_list(json,list):
+    # esta funcion como su nombre lo indica,
+    # busca por cada elemento de la lista una
+    # clave valida en el json, y si la encuentra
+    # retorna el valor del json
     for key in list:
         try:
             return str(json[key]).strip()
@@ -82,13 +86,9 @@ def json_in_list(json,list):
                 break
     return None
 
-def list_in_list(list,list_to_find):
-    for l in list:
-        if l in list_to_find:
-            return True
-    return False
-
 def CheckNull(data):
+    # recibe un string que puede ser Nulo
+    # y busca similitudes en una lista ALLOWED_NULLS
     if data is None or data in ALLOWED_NULLS:
         #Si es Nulo retorna Nulo
         return None
@@ -96,36 +96,39 @@ def CheckNull(data):
         #Si no es Nulo retorna el valor
         return data
 
+# esta clase se encarga de validar todos los tipos de datos
+# que entran a travez de json, uri, url, basicamente
+# toda la informacion de entrada
 class validate():
     def user(json_data):
         data = json_in_list(json_data,USER)
         data = CheckNull(data)
-        if data is None:
-            return None
-        else:
+        if data is not None:
             for char in UNALLOWED_CHARSET_IN_NAMES:
                 data = data.replace(char,'')
-            return data[:NAMES_MAX_LENGTH]
+            if len(data) >= NAMES_MIN_LENGTH: 
+                return data[:NAMES_MAX_LENGTH]
+        return None
         
     def firstname(json_data):
         data = json_in_list(json_data,FIRSTNAME)
         data = CheckNull(data)
-        if data is None:
-            return None
-        else:
+        if data is not None:
             for char in UNALLOWED_CHARSET_IN_NAMES:
                 data.replace(char,'')
-            return data[:NAMES_MAX_LENGTH]
+            if len(data) >= NAMES_MIN_LENGTH: 
+                return data[:NAMES_MAX_LENGTH]
+        return None
     
     def lastname(json_data):
         data = json_in_list(json_data,LASTNAME)
         data = CheckNull(data)
-        if data is None:
-            return None
-        else:
+        if data is not None:
             for char in UNALLOWED_CHARSET_IN_NAMES:
                 data.replace(char,'')
-            return data[:NAMES_MAX_LENGTH]
+            if len(data) >= NAMES_MIN_LENGTH: 
+                return data[:NAMES_MAX_LENGTH]
+        return None
 
     def key(json_data):
         data = json_in_list(json_data,KEY)
@@ -184,23 +187,23 @@ class validate():
 
         allowed_users = execute(USERLIST_SQL_QUERY)
         if allowed_users: allowed_users = [u[0] for u in allowed_users if u is not None]
-        userList = [validate.user(u) for u in userList.split(',') if u is not None and u.strip() in allowed_users]
+        if userList is not None: userList = [validate.user(u) for u in userList.split(',') if u is not None and u.strip() in allowed_users]
         
         return userList
     
     def infoList(json_data):
         infoList = json_in_list(json_data,INFO)
 
-        infoList = [i.strip() for i in infoList.split(',') if i is not None]
-        
-        list = []
-        for i in infoList:
-            for name_default, list_of_names in INFO_FOR_USER:
-                if i in list_of_names:
-                    list.append(name_default)
-                    break
-        infoList = list.copy()
-        list.clear()
+        if infoList is not None:
+            infoList = [i.strip() for i in infoList.split(',') if i is not None]
+            list = []
+            for i in infoList:
+                for name_default, list_of_names in INFO_FOR_USER:
+                    if i in list_of_names:
+                        list.append(name_default)
+                        break
+            infoList = list.copy()
+            list.clear()
 
         return infoList
     
@@ -253,24 +256,3 @@ class validate():
         elif value in DESCENDANT: order = DESCENDANT[0]
         order = order or ORDER_DEFAULT
         return order
-
-def test():
-    test = []
-    test.append(validate.private({"x":"NNHUYNDPJAVVEN2H"}))
-    test.append(validate.key({"k":"123456"}))
-    if None not in test:
-        print("test pasado")
-        print(test)
-
-json_uri_test = {
-"user": "Admin, user, user, Marcos, Franchezco, virgolimi, fieaaauu, la maquina mas veloz, de tote, italie, fiiii",
-"usertype":"user",
-"info": "fn,id,u,ln,a,ca",
-"limit": "101",
-"offset": "1",
-"orderby": "fn",
-"order": 'ascendente',
-"nmms": "a"
-}
-
-# print(validate.user({"u":"soy subnormal"}))

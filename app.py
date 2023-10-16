@@ -17,35 +17,44 @@ from urllib.parse import quote, urlparse, parse_qs, unquote
 import json
 # este sive para deducir el tipo de archivo en http, a partir de su formato, al enviar datos por http deber incluir el formato de lo que estas enviando
 import mimetypes
-# ngrok esta aqui para utilizar https de la mejor forma posible, gracias ngrok por existir
-# from pyngrok import ngrok
-# random para generar las tokens de acceso (por ahora)
+# la clase validate se usara para validar toda la informacion
 from validation import validate
-
+# el modelo procesa la mayor parte de la informacion
 from model import login, logout, register, unregister, userinfo
-
 # algunas variables para cambiar facilmente
-# ngrok.set_auth_token("23A0NOBgyrOJiOsFigeCZ8jzHu8_7it8m6QLYw8DGDuiZUSoH")
 
 # ajustes del servidor
+HOST = 'localhost'
+# cambia el puerto de escucha del servidor
 DEF_SERVER_PORT = 8080
+# cambia la cabecera de respuesta server
 SERVER_OBFUSCATION = True
-SERVER_NAME = None
+# cambia el nombre en la cabecera de respuesta server, si es None no envia la cabecera
+SERVER_NAME = "Not GlassFish"
+# en caso de reinicializacion del servidor de la base de datos
+# se añadira automaticamente este usuario
 SERVER_DEFAULT_ADMIN_USER = {
     'username'   : 'Admin',
     'firstname'  : 'The Lord',
     'lastname'   : 'Administrator',
     'access_lvl' : 3
 }
+# Se usara para autenticar el usuario de arriba, si es None
+# se generara una aleatoria y se imprimira en pantalla el primer inicio
 SERVER_TOTP_SECRET = None
+# el tiempo que espera en segundos el servidor a que se complete una solicitud
+# por defecto 5, si se pasa de ese tiempo se genera un timeout 
 CONECTION_TIME_OUT_SECS = 5
+# permite que si realizen peticiones desde origenes desconocidos
+# o que cualquier pagina pueda usar esta api
 ALLOW_CROSS_ORIGIN = True
+# punto de inicio del servidor api
 START_API_SERVER_AT = '/api'
 
 # direcciones url permitidas para el header de respuesta Access-Control-Allow-Origin para peticiones http a la api.
 ALLOWED_URLS = ['*']
 
-# endpoints activos
+# endpoints activos y sus direcciones parametrizadas
 USERINFO = '/userinfo' # GET
 TEST = '/test' # GET
 LOGIN = '/login' # POST
@@ -53,24 +62,7 @@ LOGOUT = '/logout' # POST
 REGISTER = '/register' # POST
 UNREGISTER = '/unregister' # POST
 
-# diccionario para convertir de argumento api a base de datos en USERINFO.
-REPLACE_API_DB={
-    'u':'username',
-    'id':'id',
-    'fn':'first_name',
-    'ln':'last_name',
-    'a':'access_lvl',
-    'ca':'created_at'
-}
-# diccionario inverso con el mismo proposito, pero de base de datos a api.
-REPLACE_API_DB_R = {v: k for k, v in REPLACE_API_DB.items()}
-
-# esta es la estructura en sql anidado de todas las tablas dentro de la bases de datos
-# se usa por la funcion initialize_all_tables() en caso de que sea necesario volver a crear las tablas
-# si la cambias solo tendra efecto al crear de nuevo la tabla afectada
-
-HOST = 'localhost'
-
+print(f"host seleccionado = {HOST}")
 print(f"puerto seleccionado = {DEF_SERVER_PORT}")
 
 class MyapiHTTP(BaseHTTPRequestHandler):
@@ -80,7 +72,8 @@ class MyapiHTTP(BaseHTTPRequestHandler):
     def send_response(self, code, message=None):
         self.log_request(code)
         self.send_response_only(code, message)
-        if SERVER_OBFUSCATION: self.send_header('Server', SERVER_NAME or 'Not GlassFish')
+        if SERVER_OBFUSCATION: 
+            if SERVER_NAME is not None: self.send_header('Server', SERVER_NAME)
         else: self.send_header('Server', self.version_string())
         self.send_header('Date', self.date_time_string())
 
@@ -157,7 +150,6 @@ class MyapiHTTP(BaseHTTPRequestHandler):
             order = validate.order(uri_params)
             limit = validate.limit(uri_params)
             offset = validate.offset(uri_params)
-            self.send_response(HTTPStatus.OK)
             try:
                 result = userinfo(session_token, userL, infoL, userType, orderBy, order, limit, offset)
                 if result is not None:
@@ -244,16 +236,15 @@ class MyapiHTTP(BaseHTTPRequestHandler):
             json_data = self.get_json()
             user = validate.user(json_data)
             totpkey = validate.key(json_data)
-            with DB.connection() as (database, cursor):
-                try:
-                    result = unregister(username=user, key=totpkey)
-                    if result:
-                        self.send_response(HTTPStatus.OK)
-                    else:
-                        self.send_response(HTTPStatus.UNAUTHORIZED)
-                except Exception as Err:
-                    print(Err)
-                    self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR)
+            try:
+                result = unregister(username=user, key=totpkey)
+                if result:
+                    self.send_response(HTTPStatus.OK)
+                else:
+                    self.send_response(HTTPStatus.UNAUTHORIZED)
+            except Exception as Err:
+                print(Err)
+                self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR)
             self.end_headers()
         if(errores!='no'):print(f'-- {self.client_address[0]} - - [{time.strftime("%d/%m/%Y %H:%M:%S", time.localtime())}] "{self.requestline}" - (Empty HTTP response) Razon: {errores}')
         
