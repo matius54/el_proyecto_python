@@ -1,7 +1,7 @@
 # el_proyecto
 servidor api escrito en python para el proyecto sociotecnologico
 
-Para instalar y ejecutar en windows:
+## Para instalar y ejecutar en windows:
 1) Requisitos:
    - PC con `Windows 10` o una versión mas reciente instalado (no esta probado en otras versiones)
    - Servidor de base de datos SQL (de preferencia: `MariaDB`)
@@ -17,8 +17,16 @@ Para instalar y ejecutar en windows:
 3) Ejecucion:
    - activa el entorno virtual de python usando `el_proyecto\Scripts\activate.bat`
    - y por ultimo inicia el servidor usando `python app.py`
-   - entra en http://localhost:8080/ y deberia funcionar
+   - entra en http://localhost:8080/api y deberia funcionar
 4) Por Ultimo:
    - utiliza `Ctrl + C` para detenerlo
    - y cada vez que necesites reiniciar el servidor debe repetir los pasos de Ejecucion.
+  
+## endpoints en funcionamiento
+   - /test
+   - /login
+   - /logout
+   - /register
+   - /unregister
+   - /userinfo
    
