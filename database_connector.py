@@ -1,6 +1,6 @@
 import mysql.connector
 
-DB_NAME = 'db2'
+DB_NAME = 'db1'
 DB_HOST = 'localhost'
 DB_USER = 'root'
 DB_PASS = ''
