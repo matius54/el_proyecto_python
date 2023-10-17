@@ -1,5 +1,5 @@
 # el_proyecto_python
-servidor api escrito en python para el proyecto socio tecnologico, su objetivo es proporcionar un puente entre una base de datos sql y solicitudes http con un sistema de usuarios, aun faltan muchas caracteristicas asi que esta es una implementacion incompleta.
+servidor api escrito en python, su objetivo es proporcionar un puente entre una base de datos sql y solicitudes http con un sistema de usuarios, aun faltan muchas caracteristicas asi que esta es una implementacion incompleta.
 ## Para instalar y ejecutar en windows:
 1) Requisitos:
    - PC con _Windows 10_ o una versión mas reciente instalado (no esta probado en otras versiones)
