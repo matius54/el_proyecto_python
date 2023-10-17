@@ -197,6 +197,7 @@ class MyapiHTTP(BaseHTTPRequestHandler):
                         self.send_response(HTTPStatus.UNAUTHORIZED)
                         self.end_headers()
                     else:
+                        self.send_response(HTTPStatus.OK)
                         self.send_json({"u":user,"x":result})
                 elif url_params[1] == LOGIN:
                     user = validate.user(json_data)

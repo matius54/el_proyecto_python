@@ -14,12 +14,12 @@ class DBHelp():
             True
 
     def getIdFromUser(cursor,user):
-        cursor.execute("SELECT id FROM user WHERE username = %s",(user,))
+        cursor.execute(f"SELECT {validation.ID[0]} FROM user WHERE {validation.USER[0]} = %s",(user,))
         result=cursor.fetchone()
         return int(result[0])
     
     def getSessionFromUser(cursor,user):
-        cursor.execute("SELECT token FROM session_token JOIN user ON user.id = user_id WHERE username = %s",(user,))
+        cursor.execute(f"SELECT {validation.SESSION[0]} FROM session_token JOIN user ON user.id = user_id WHERE {validation.USER[0]} = %s",(user,))
         result = cursor.fetchone()
         if cursor.rowcount == 1:
             return result[0]
@@ -46,8 +46,8 @@ def totp_user_verify(username,key):
     return False
 
 def login(username,key):
-    LOGIN_COUNT_SESSION = "SELECT COUNT(*) FROM session_token WHERE token = %s"
-    LOGIN_INSERT_SESSION = "INSERT INTO session_token (user_id, token) VALUES (%s, %s)"
+    LOGIN_COUNT_SESSION = f"SELECT COUNT(*) FROM session_token WHERE {validation.SESSION[0]} = %s"
+    LOGIN_INSERT_SESSION = f"INSERT INTO session_token (user_id, {validation.SESSION[0]}) VALUES (%s, %s)"
     if totp_user_verify(username,key):
         with db.connection() as (database, cursor):
             session_token = DBHelp.getSessionFromUser(cursor,username)
@@ -63,8 +63,8 @@ def login(username,key):
     return None
 
 def logout(session):
-    SESSION_JOIN_USERNAME_TOKEN = "SELECT username FROM user JOIN session_token ON user_id = user.id WHERE token = %s"
-    SESSION_DELETE_SESSION = "DELETE FROM session_token WHERE token = %s"
+    SESSION_JOIN_USERNAME_TOKEN = f"SELECT {validation.USER[0]} FROM user JOIN session_token ON user_id = user.id WHERE {validation.SESSION[0]} = %s"
+    SESSION_DELETE_SESSION = f"DELETE FROM session_token WHERE {validation.SESSION[0]} = %s"
     with db.connection() as (database, cursor):
         cursor.execute(SESSION_JOIN_USERNAME_TOKEN,(session,))
         result = cursor.fetchone()
@@ -72,15 +72,15 @@ def logout(session):
             username = result[0]
             cursor.execute(SESSION_DELETE_SESSION, (session,))
             database.commit()
-            print(f"{cursor.rowcount} sesion cerrada vinculad a usuario '{username}'")
+            print(f"{cursor.rowcount} sesion cerrada vinculada al usuario '{username}'")
             if cursor.rowcount > 0:
                 return True
     return False
 
 def register(session, user=None, firstname=None, lastname=None, access=None, secret=None, override=False):
-    REGISTER_GET_ACCES_FROM_TOKEN = "SELECT access_lvl FROM user JOIN session_token ON user_id = user.id WHERE token = %s"
-    REGISTER_TOTP_DUPLICATE_VERIFICATION = "SELECT COUNT(*) FROM user WHERE private = %s"
-    REGISTER_INSERT = "INSERT INTO user (private, username, access_lvl, first_name, last_name) VALUES (%s,%s,%s,%s,%s)"
+    REGISTER_GET_ACCES_FROM_TOKEN = f"SELECT {validation.ACCESS[0]} FROM user JOIN session_token ON user_id = user.id WHERE {validation.SESSION[0]} = %s"
+    REGISTER_TOTP_DUPLICATE_VERIFICATION = f"SELECT COUNT(*) FROM user WHERE {validation.PRIVATE[0]} = %s"
+    REGISTER_INSERT = f"INSERT INTO user ({validation.PRIVATE[0]}, {validation.USER[0]}, {validation.ACCESS[0]}, {validation.FIRSTNAME[0]}, {validation.LASTNAME[0]}) VALUES (%s,%s,%s,%s,%s)"
     session = session or None
     newUser = user or None
     newFirstname = firstname or None
@@ -108,8 +108,8 @@ def register(session, user=None, firstname=None, lastname=None, access=None, sec
     return None
 
 def unregister(username,key):
-    UNREGISTER_JOIN_TOKEN_USERNAME = "SELECT token FROM session_token JOIN user ON user.id = user_id WHERE username = %s"
-    UNREGISTER_DELETE_USER = "DELETE FROM user WHERE username = %s"
+    UNREGISTER_JOIN_TOKEN_USERNAME = f"SELECT token FROM session_token JOIN user ON user.id = user_id WHERE {validation.USER[0]} = %s"
+    UNREGISTER_DELETE_USER = f"DELETE FROM user WHERE {validation.USER[0]} = %s"
     if totp_user_verify(username,key):
         with db.connection() as (database, cursor):
             cursor.execute(UNREGISTER_JOIN_TOKEN_USERNAME,(username,))
@@ -131,7 +131,7 @@ def userinfo(session, userList, infoList, userType, orderBy, order, limit, offse
         limit = limit if limit is not None else validation.LIMIT_DEFAULT
         offset = offset if offset is not None else validation.OFFSET_DEFAULT
         with db.connection() as (_, cursor):
-            cursor.execute(f"SELECT {validation.USER[0]}, {validation.ACCESS[0]} FROM user JOIN session_token ON user_id = user.id WHERE token = %s",(session,))
+            cursor.execute(f"SELECT {validation.USER[0]}, {validation.ACCESS[0]} FROM user JOIN session_token ON user_id = user.id WHERE {validation.SESSION[0]} = %s",(session,))
             result = cursor.fetchone()
             if result is not None:
                 (userName, access) = result
