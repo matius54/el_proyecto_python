@@ -45,7 +45,8 @@ def totp_user_verify(username,key):
     if result: return totp(result[0][0]).verify(key)
     return False
 
-def login(username,key):
+def login(payload):
+    username, key = payload
     LOGIN_COUNT_SESSION = f"SELECT COUNT(*) FROM session_token WHERE {validation.SESSION[0]} = %s"
     LOGIN_INSERT_SESSION = f"INSERT INTO session_token (user_id, {validation.SESSION[0]}) VALUES (%s, %s)"
     if totp_user_verify(username,key):
@@ -62,7 +63,8 @@ def login(username,key):
             return session_token
     return None
 
-def logout(session):
+def logout(payload):
+    session = payload
     SESSION_JOIN_USERNAME_TOKEN = f"SELECT {validation.USER[0]} FROM user JOIN session_token ON user_id = user.id WHERE {validation.SESSION[0]} = %s"
     SESSION_DELETE_SESSION = f"DELETE FROM session_token WHERE {validation.SESSION[0]} = %s"
     with db.connection() as (database, cursor):
@@ -77,7 +79,8 @@ def logout(session):
                 return True
     return False
 
-def register(session, user=None, firstname=None, lastname=None, access=None, secret=None, override=False):
+def register(payload, secret=None, override=False):
+    session, user, firstname, lastname, access = payload
     REGISTER_GET_ACCES_FROM_TOKEN = f"SELECT {validation.ACCESS[0]} FROM user JOIN session_token ON user_id = user.id WHERE {validation.SESSION[0]} = %s"
     REGISTER_TOTP_DUPLICATE_VERIFICATION = f"SELECT COUNT(*) FROM user WHERE {validation.PRIVATE[0]} = %s"
     REGISTER_INSERT = f"INSERT INTO user ({validation.PRIVATE[0]}, {validation.USER[0]}, {validation.ACCESS[0]}, {validation.FIRSTNAME[0]}, {validation.LASTNAME[0]}) VALUES (%s,%s,%s,%s,%s)"
@@ -107,7 +110,8 @@ def register(session, user=None, firstname=None, lastname=None, access=None, sec
                     return otptoken
     return None
 
-def unregister(username,key):
+def unregister(payload):
+    username, key = payload
     UNREGISTER_JOIN_TOKEN_USERNAME = f"SELECT token FROM session_token JOIN user ON user.id = user_id WHERE {validation.USER[0]} = %s"
     UNREGISTER_DELETE_USER = f"DELETE FROM user WHERE {validation.USER[0]} = %s"
     if totp_user_verify(username,key):
@@ -121,7 +125,8 @@ def unregister(username,key):
             return True
     return False
 
-def userinfo(session, userList, infoList, userType, orderBy, order, limit, offset):
+def userinfo(payload):
+    session, userType, userList, infoList, orderBy, order, limit, offset = payload
     if session:
         userList = userList or ['all']
         infoList = infoList or ['all']

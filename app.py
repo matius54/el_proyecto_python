@@ -147,16 +147,8 @@ class MyapiHTTP(BaseHTTPRequestHandler):
                 })
         elif url_params[1] == USERINFO:
             session_token = url_params[2]
-            session_token = validate.session(session_token)
-            userType = validate.userType(uri_params)
-            userL = validate.userList(uri_params,userType)
-            infoL = validate.infoList(uri_params)
-            orderBy = validate.orderBy(uri_params)
-            order = validate.order(uri_params)
-            limit = validate.limit(uri_params)
-            offset = validate.offset(uri_params)
             try:
-                result = userinfo(session_token, userL, infoL, userType, orderBy, order, limit, offset)
+                result = userinfo(validate.userinfo(uri_params, session_token))
                 if result is not None:
                     self.send_response(HTTPStatus.OK)
                     self.send_json(result)
@@ -187,12 +179,8 @@ class MyapiHTTP(BaseHTTPRequestHandler):
         try:
             if len(url_params) >= 1:
                 if url_params[1] == REGISTER:
-                    session = validate.session(json_data)
                     user = validate.user(json_data)
-                    firstname = validate.firstname(json_data)
-                    lastname = validate.lastname(json_data)
-                    access = validate.access(json_data)
-                    result = register(session=session,user=user,firstname=firstname,lastname=lastname,access=access)
+                    result = register(validate.register(json_data))
                     if result is None:
                         self.send_response(HTTPStatus.UNAUTHORIZED)
                         self.end_headers()
@@ -200,9 +188,7 @@ class MyapiHTTP(BaseHTTPRequestHandler):
                         self.send_response(HTTPStatus.OK)
                         self.send_json({"u":user,"x":result})
                 elif url_params[1] == LOGIN:
-                    user = validate.user(json_data)
-                    totpkey = validate.key(json_data)
-                    session_token = login(username = user, key = totpkey)
+                    session_token = login(validate.login(json_data))
                     if session_token is None:
                         self.send_response(HTTPStatus.UNAUTHORIZED)
                         self.end_headers()
@@ -210,17 +196,14 @@ class MyapiHTTP(BaseHTTPRequestHandler):
                         self.send_response(HTTPStatus.OK)
                         self.send_json({'s':session_token})
                 elif url_params[1] == LOGOUT:
-                    session = validate.session(json_data)
-                    result = logout(session)
+                    result = logout(validate.logout(json_data))
                     if not result:
                         self.send_response(HTTPStatus.UNAUTHORIZED)
                     elif result:
                         self.send_response(HTTPStatus.OK)
                     self.end_headers()
                 elif url_params[1] == UNREGISTER:
-                    user = validate.user(json_data)
-                    totpkey = validate.key(json_data)
-                    result = unregister(username=user, key=totpkey)
+                    result = unregister(validate.unregister(json_data))
                     if result:
                         self.send_response(HTTPStatus.OK)
                     else:

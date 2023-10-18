@@ -261,3 +261,36 @@ class validate():
         elif value in DESCENDANT: order = DESCENDANT[0]
         order = order or ORDER_DEFAULT
         return order
+    
+    def login(json_data):
+        user = validate.user(json_data)
+        totpkey = validate.key(json_data)
+        return user, totpkey
+    
+    def logout(json_data):
+        session = validate.session(json_data)
+        return session
+    
+    def register(json_data):
+        session = validate.session(json_data)
+        user = validate.user(json_data)
+        firstname = validate.firstname(json_data)
+        lastname = validate.lastname(json_data)
+        access = validate.access(json_data)
+        return session, user, firstname, lastname, access
+    
+    def unregister(json_data):
+        user = validate.user(json_data)
+        totpkey = validate.key(json_data)
+        return user, totpkey
+    
+    def userinfo(uri_params,session_token):
+        session_token = validate.session(session_token)
+        userType = validate.userType(uri_params)
+        userL = validate.userList(uri_params,userType)
+        infoL = validate.infoList(uri_params)
+        orderBy = validate.orderBy(uri_params)
+        order = validate.order(uri_params)
+        limit = validate.limit(uri_params)
+        offset = validate.offset(uri_params)
+        return session_token, userType, userL, infoL, orderBy, order, limit, offset
