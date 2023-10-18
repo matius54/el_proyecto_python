@@ -61,11 +61,12 @@ def check_admin_user():
         try:
             user = validate.user(default_admin.username)
             secret = register(
-                session=None,
-                user=user,
-                firstname=validate.firstname(default_admin.firstname),
-                lastname=validate.lastname(default_admin.lastname),
-                access=validate.access(default_admin.access),
+                payload=(
+                    None,user,
+                    validate.firstname(default_admin.firstname),
+                    validate.lastname(default_admin.lastname),
+                    validate.access(default_admin.access)
+                ),
                 secret=validate.private(default_admin.secret),
                 override=True
                 )
