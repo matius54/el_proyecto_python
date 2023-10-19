@@ -1,10 +1,17 @@
 import mysql.connector
 
-DB_NAME = 'db1'
+# variables que se usan para conectar con el servidor de base de datos
+
+# direccion o host del servidor, 'localhost'
 DB_HOST = 'localhost'
-DB_USER = 'root'
-DB_PASS = ''
+# puerto al que se conectara, por defecto 3306
 DB_PORT = 3306
+# usuario del servidor, por defecto 'root'
+DB_USER = 'root'
+# contraseña del servidor, por defecto sin contraseña ''
+DB_PASS = ''
+# nombre de la base de datos dentro del servidor, por defecto 'db1'
+DB_NAME = 'db1'
 
 # esta es la estructura en sql anidado de todas las tablas dentro de la bases de datos
 # se usa por la funcion initialize_all_tables() en caso de que sea necesario volver a crear las tablas

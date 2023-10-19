@@ -5,6 +5,8 @@ import os
 from datetime import datetime
 import validation
 
+# TODO eliminar esta clase y trasladar logica a sus funciones de origen
+
 class DBHelp():
     def isDuplicated(cursor,sqlquery,value):
         cursor.execute(sqlquery,value)
@@ -49,17 +51,19 @@ def login(payload):
     username, key = payload
     LOGIN_COUNT_SESSION = f"SELECT COUNT(*) FROM session_token WHERE {validation.SESSION[0]} = %s"
     LOGIN_INSERT_SESSION = f"INSERT INTO session_token (user_id, {validation.SESSION[0]}) VALUES (%s, %s)"
+    # verifica si el nombre de usuario y el totp son validos, totp_user_verify() busca en la base de datos el private vinculado al usuario
     if totp_user_verify(username,key):
         with db.connection() as (database, cursor):
             session_token = DBHelp.getSessionFromUser(cursor,username)
             if session_token is None:
                 while True:
-                    session_token=b64token_gen()
+                    session_token = b64token_gen()
                     if not DBHelp.isDuplicated(cursor,LOGIN_COUNT_SESSION,(session_token,)):
                         break
                 id_user = DBHelp.getIdFromUser(cursor,username)
                 cursor.execute(LOGIN_INSERT_SESSION, (id_user,session_token))
                 database.commit()
+            # se retorna el token generado aleatoriamente o obtenido de la base de datos para evitar sesiones duplicadas
             return session_token
     return None
 

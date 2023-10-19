@@ -6,13 +6,13 @@ from http import HTTPStatus
 # libreria encargada de recibir y administrar las solicitudes http para la api y el servidor
 from http.server import HTTPServer, BaseHTTPRequestHandler
 # ayuda a convertir extraer y en general administrar informacion y paramentros en las url
-from urllib.parse import quote, urlparse, parse_qs, unquote
+from urllib.parse import urlparse, parse_qs, unquote
 # para codificar y decodificar formato json muy importante para la api, ya que casi todos los datos se codifican en estes formato
 import json
 # este sive para deducir el tipo de archivo en http, a partir de su formato, al enviar datos por http deber incluir el formato de lo que estas enviando
 import mimetypes
 # la clase validate se usara para validar toda la informacion
-from validation import validate, USER, ACCESS_MAX_VALUE
+from validation import validate, ACCESS_MAX_VALUE
 # el modelo procesa la mayor parte de la informacion
 from model import login, logout, register, unregister, userinfo
 # algunas variables para cambiar facilmente
@@ -162,6 +162,7 @@ class MyapiHTTP(BaseHTTPRequestHandler):
                 self.end_headers()
         path = os.path.abspath(os.getcwd() + '\App')
         if path.startswith(os.getcwd()+'\App') and not self.path.endswith('.py') and False:
+            #TODO
             path = f'{path}{unquote(self.path).replace("/", os.path.sep)}'
             try:
                 with open(path,'rb') as file:

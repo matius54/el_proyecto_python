@@ -28,6 +28,7 @@ OFFSET_MAX = 1000
 # el segundo elemento de algunas tablas esta definido como el
 # default que se usara en las respuestas de los json
 # (por ahora solo usado en userinfo)
+# y el segundo elemento de algunas listas se usan para responder
 
 
 DB_NULL = None
@@ -104,6 +105,7 @@ def CheckNull(data):
 # esta clase se encarga de validar todos los tipos de datos
 # que entran a travez de json, uri, url, basicamente
 # toda la informacion de entrada
+
 class validate():
     def user(json_data):
         data = json_in_list(json_data,USER)
@@ -264,6 +266,8 @@ class validate():
         order = order or ORDER_DEFAULT
         return order
     
+    # validaciones de cada funcion
+
     def login(json_data):
         user = validate.user(json_data)
         totpkey = validate.key(json_data)
