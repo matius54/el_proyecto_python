@@ -166,11 +166,11 @@ def userinfo(payload):
                 item = {}
                 items = []
                 for row in result:
-                    item.clear()
                     for column_index, value in enumerate(row):
-                        column_name = cursor.column_names[column_index]
+                        column_name = cursor.column_names[column_index] # convertir el formato de la fecha es necesario para obtener un string
                         item[validation.USERINFO_JSON[column_name]] = value if column_name != validation.CREATED_AT[0] else value.isoformat()
                     items.append(item.copy())
+                    item.clear()
                 response[validation.ITEMS] = items
                 print(f"usuario '{userName}' ha solicitado informacion en userinfo")
                 return response
