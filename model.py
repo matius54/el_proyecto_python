@@ -163,12 +163,15 @@ def userinfo(payload):
                 response = {}
                 response[validation.ITEM_COUNT]=len(result)
                 response[validation.LOCAL_TIME]=datetime.now().isoformat()
-                response[validation.ITEMS] = {}
-                for row_index, row in enumerate(result):
-                    response[validation.ITEMS][row_index + offset] = {}
+                item = {}
+                items = []
+                for row in result:
+                    item.clear()
                     for column_index, value in enumerate(row):
                         column_name = cursor.column_names[column_index]
-                        response[validation.ITEMS][row_index + offset][validation.USERINFO_JSON[column_name]] = value if column_name != validation.CREATED_AT[0] else value.isoformat()
+                        item[validation.USERINFO_JSON[column_name]] = value if column_name != validation.CREATED_AT[0] else value.isoformat()
+                    items.append(item.copy())
+                response[validation.ITEMS] = items
                 print(f"usuario '{userName}' ha solicitado informacion en userinfo")
                 return response
     return None
