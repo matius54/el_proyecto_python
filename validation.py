@@ -205,7 +205,9 @@ class validate():
             for i in infoList:
                 for name_default, list_of_names in INFO_FOR_USER:
                     if i in list_of_names:
-                        list.append(name_default)
+                        # no añade elementos duplicados
+                        if name_default not in list:
+                            list.append(name_default)
                         break
             infoList = list.copy()
             list.clear()
