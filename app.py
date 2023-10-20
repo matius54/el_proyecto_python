@@ -221,4 +221,7 @@ class MyapiHTTP(BaseHTTPRequestHandler):
 
 server = HTTPServer((HOST, DEF_SERVER_PORT), MyapiHTTP)
 print(f"\nRunning api on http://{HOST}:{DEF_SERVER_PORT}/{START_API_SERVER_AT}")
-server.serve_forever()
+try:
+    server.serve_forever()
+except KeyboardInterrupt:
+    print("ctrl+c Detected!\nshutting down...")
